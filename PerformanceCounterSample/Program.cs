@@ -6,39 +6,71 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace PerformanceCounterSample
-{
+{    static class Constants
+    {
+        public const string COUNTER_PER_SESSION = "User Input Delay per Session";
+        public const string COUNTER_PER_PROCESS = "User Input Delay per Process";
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            PerformanceCounterCategory[] categories;
+            PerformanceCounterCategory pcc;
+            PerformanceCounter[] counters;
 
-            /* Generate a list of categories registered on this computer. */
+            /* "User Input Delay per Session" Category */
             try
             {
-                categories = PerformanceCounterCategory.GetCategories();
+                pcc = new PerformanceCounterCategory(Constants.COUNTER_PER_SESSION);
+                counters = pcc.GetCounters();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unable to get categories on this computer:");
+                Console.WriteLine("Unable to get counter information for " +
+                    "category \"{0}\" on this computer:", Constants.COUNTER_PER_SESSION);
                 Console.WriteLine(ex.Message);
                 return;
             }
 
-            Console.WriteLine("These categories are registered on this computer:");
-
-            // Create and sort an array of category names.
-            string[] categoryNames = new string[categories.Length];
-            int objX;
-            for (objX = 0; objX < categories.Length; objX++)
+            Console.WriteLine("**** Category \"{0}\" *****", Constants.COUNTER_PER_SESSION);
+            if (counters != null)
             {
-                categoryNames[objX] = categories[objX].CategoryName;
+                foreach (var counter in counters)
+                {
+                    Console.WriteLine(counter.CounterName);
+                }
             }
-            Array.Sort(categoryNames);
-
-            for (objX = 0; objX < categories.Length; objX++)
+            else
             {
-                Console.WriteLine("{0,4} - {1}", objX + 1, categoryNames[objX]);
+                Console.WriteLine("This category has no counter.");
+            }
+
+            /* "User Input Delay per Session" Category */
+            try
+            {
+                pcc = new PerformanceCounterCategory(Constants.COUNTER_PER_PROCESS);
+                counters = pcc.GetCounters();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unable to get counter information for " +
+                    "category \"{0}\" on this computer:", Constants.COUNTER_PER_PROCESS);
+                Console.WriteLine(ex.Message);
+                return;
+            }
+
+            Console.WriteLine("**** Category \"{0}\" *****", Constants.COUNTER_PER_PROCESS);
+            if (counters != null)
+            {
+                foreach (var counter in counters)
+                {
+                    Console.WriteLine(counter.CounterName);
+                }
+            }
+            else
+            {
+                Console.WriteLine("This category has no counter.");
             }
         }
     }
