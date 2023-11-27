@@ -17,60 +17,212 @@ namespace PerformanceCounterSample
         static void Main(string[] args)
         {
             PerformanceCounterCategory pcc;
-            PerformanceCounter[] counters;
+            string[] instances;
 
             /* "User Input Delay per Session" Category */
+            // Instances
             try
             {
                 pcc = new PerformanceCounterCategory(Constants.COUNTER_PER_SESSION);
-                counters = pcc.GetCounters();
+                instances = pcc.GetInstanceNames();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unable to get counter information for " +
+                Console.WriteLine("Unable to get instance information for " +
                     "category \"{0}\" on this computer:", Constants.COUNTER_PER_SESSION);
                 Console.WriteLine(ex.Message);
                 return;
             }
 
-            Console.WriteLine("**** Category \"{0}\" *****", Constants.COUNTER_PER_SESSION);
-            if (counters != null)
+            // If an empty array is returned, the category has a single instance.
+            if (instances.Length == 0)
             {
-                foreach (var counter in counters)
-                {
-                    Console.WriteLine(counter.CounterName);
-                }
+                Console.WriteLine("Category \"{0}\" on this computer" +
+                    " is single-instance.", pcc.CategoryName);
             }
             else
             {
-                Console.WriteLine("This category has no counter.");
+                // Otherwise, display the instances.
+                Console.WriteLine("These instances exist in category \"{0}\" on this computer:",
+                    pcc.CategoryName);
+
+                Array.Sort(instances);
+
+                int objX;
+                for (objX = 0; objX < instances.Length; objX++)
+                {
+                    Console.WriteLine("{0,4} - {1}", objX + 1, instances[objX]);
+                }
             }
 
-            /* "User Input Delay per Session" Category */
+            // Counters
+            PrintCounterList(pcc, instances);
+
+            /* "User Input Delay per Process" Category */
+            // Instances
             try
             {
                 pcc = new PerformanceCounterCategory(Constants.COUNTER_PER_PROCESS);
-                counters = pcc.GetCounters();
+                instances = pcc.GetInstanceNames();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unable to get counter information for " +
+                Console.WriteLine("Unable to get instance information for " +
                     "category \"{0}\" on this computer:", Constants.COUNTER_PER_PROCESS);
                 Console.WriteLine(ex.Message);
                 return;
             }
 
-            Console.WriteLine("**** Category \"{0}\" *****", Constants.COUNTER_PER_PROCESS);
-            if (counters != null)
+            // If an empty array is returned, the category has a single instance.
+            if (instances.Length == 0)
             {
-                foreach (var counter in counters)
+                Console.WriteLine("Category \"{0}\" on this computer" +
+                    " is single-instance.", pcc.CategoryName);
+            }
+            else
+            {
+                // Otherwise, display the instances.
+                Console.WriteLine("These instances exist in category \"{0}\" on this computer:",
+                    pcc.CategoryName);
+
+                Array.Sort(instances);
+
+                int objX;
+                for (objX = 0; objX < instances.Length; objX++)
                 {
-                    Console.WriteLine(counter.CounterName);
+                    Console.WriteLine("{0,4} - {1}", objX + 1, instances[objX]);
+                }
+            }
+
+            // Counters
+            PrintCounterList(pcc, instances);
+        }
+
+        static void PrintCounterList(PerformanceCounterCategory pcc, string[] instances)
+        {
+            PerformanceCounter[] counters;
+            string category = pcc.CategoryName;
+
+            if (instances.Length == 0)
+            {
+                try
+                {
+                    counters = pcc.GetCounters();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unable to get counter information for single-instance " +
+                        "category \"{0}\" on this computer:", category);
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
+
+                Console.WriteLine("**** Category \"{0}\": single-instance *****", category);
+
+                if (counters != null)
+                {
+                    foreach (var counter in counters)
+                    {
+                        Console.WriteLine(counter.CounterName);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("This category has no counter for single-instance.");
                 }
             }
             else
             {
-                Console.WriteLine("This category has no counter.");
+                foreach (var instance in instances)
+                {
+                    try
+                    {
+                        counters = pcc.GetCounters(instance);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Unable to get counter information for instance \"{1}\" in " +
+                            "category \"{0}\" on this computer:", category, instance);
+                        Console.WriteLine(ex.Message);
+                        return;
+                    }
+
+                    Console.WriteLine("**** Category \"{0}\": Instance \"{1}\" *****", category, instance);
+
+                    if (counters != null)
+                    {
+                        foreach (var counter in counters)
+                        {
+                            Console.WriteLine(counter.CounterName);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("This category has no counter for {0}.", instance);
+                    }
+                }
+            }            
+        }
+
+        static void PrintCounterValuePerSession(PerformanceCounterCategory pcc, string[] instances)
+        {
+            PerformanceCounter[] counters;
+            string category = pcc.CategoryName;
+
+            if (instances.Length == 0)
+            {
+                try
+                {
+                    counters = pcc.GetCounters();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unable to get counter information for single-instance " +
+                        "category \"{0}\" on this computer:", category);
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
+
+                if (counters != null)
+                {
+                    foreach (var counter in counters)
+                    {
+                        Console.WriteLine(counter.CounterName);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("This category has no counter for single-instance.");
+                }
+            }
+            else
+            {
+                foreach (var instance in instances)
+                {
+                    try
+                    {
+                        counters = pcc.GetCounters(instance);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Unable to get counter information for instance \"{1}\" in " +
+                            "category \"{0}\" on this computer:", category, instance);
+                        Console.WriteLine(ex.Message);
+                        return;
+                    }
+
+                    if (counters != null)
+                    {
+                        foreach (var counter in counters)
+                        {
+                            Console.WriteLine(counter.CounterName);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("This category has no counter for {0}.", instance);
+                    }
+                }
             }
         }
     }
