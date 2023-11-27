@@ -10,21 +10,22 @@ namespace PerformanceCounterSample
     {
         public const string COUNTER_PER_SESSION = "User Input Delay per Session";
         public const string COUNTER_PER_PROCESS = "User Input Delay per Process";
+        public const int GET_DATA_INTERVAL = 1000; // in milliseconds
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            PerformanceCounterCategory pcc;
-            string[] instances;
+            PerformanceCounterCategory pcc_session;
+            string[] instances_session;
 
             /* "User Input Delay per Session" Category */
             // Instances
             try
             {
-                pcc = new PerformanceCounterCategory(Constants.COUNTER_PER_SESSION);
-                instances = pcc.GetInstanceNames();
+                pcc_session = new PerformanceCounterCategory(Constants.COUNTER_PER_SESSION);
+                instances_session = pcc_session.GetInstanceNames();
             }
             catch (Exception ex)
             {
@@ -35,35 +36,38 @@ namespace PerformanceCounterSample
             }
 
             // If an empty array is returned, the category has a single instance.
-            if (instances.Length == 0)
+            if (instances_session.Length == 0)
             {
                 Console.WriteLine("Category \"{0}\" on this computer" +
-                    " is single-instance.", pcc.CategoryName);
+                    " is single-instance.", pcc_session.CategoryName);
             }
             else
             {
                 // Otherwise, display the instances.
                 Console.WriteLine("These instances exist in category \"{0}\" on this computer:",
-                    pcc.CategoryName);
+                    pcc_session.CategoryName);
 
-                Array.Sort(instances);
+                Array.Sort(instances_session);
 
                 int objX;
-                for (objX = 0; objX < instances.Length; objX++)
+                for (objX = 0; objX < instances_session.Length; objX++)
                 {
-                    Console.WriteLine("{0,4} - {1}", objX + 1, instances[objX]);
+                    Console.WriteLine("{0,4} - {1}", objX + 1, instances_session[objX]);
                 }
             }
 
             // Counters
-            PrintCounterList(pcc, instances);
+            PrintCounterList(pcc_session, instances_session);
 
             /* "User Input Delay per Process" Category */
+            PerformanceCounterCategory pcc_process;
+            string[] instances_process;
+
             // Instances
             try
             {
-                pcc = new PerformanceCounterCategory(Constants.COUNTER_PER_PROCESS);
-                instances = pcc.GetInstanceNames();
+                pcc_process = new PerformanceCounterCategory(Constants.COUNTER_PER_PROCESS);
+                instances_process = pcc_process.GetInstanceNames();
             }
             catch (Exception ex)
             {
@@ -74,28 +78,31 @@ namespace PerformanceCounterSample
             }
 
             // If an empty array is returned, the category has a single instance.
-            if (instances.Length == 0)
+            if (instances_process.Length == 0)
             {
                 Console.WriteLine("Category \"{0}\" on this computer" +
-                    " is single-instance.", pcc.CategoryName);
+                    " is single-instance.", pcc_process.CategoryName);
             }
             else
             {
                 // Otherwise, display the instances.
                 Console.WriteLine("These instances exist in category \"{0}\" on this computer:",
-                    pcc.CategoryName);
+                    pcc_process.CategoryName);
 
-                Array.Sort(instances);
+                Array.Sort(instances_process);
 
                 int objX;
-                for (objX = 0; objX < instances.Length; objX++)
+                for (objX = 0; objX < instances_process.Length; objX++)
                 {
-                    Console.WriteLine("{0,4} - {1}", objX + 1, instances[objX]);
+                    Console.WriteLine("{0,4} - {1}", objX + 1, instances_process[objX]);
                 }
             }
 
             // Counters
-            PrintCounterList(pcc, instances);
+            PrintCounterList(pcc_process, instances_process);
+
+            /* Get & Show the values */
+            PrintCounterValuePerSession(pcc_session, instances_session);
         }
 
         static void PrintCounterList(PerformanceCounterCategory pcc, string[] instances)
@@ -171,9 +178,12 @@ namespace PerformanceCounterSample
 
             if (instances.Length == 0)
             {
+                counters = new PerformanceCounter[1];
+
+                PerformanceCounter[] tempCounters;
                 try
                 {
-                    counters = pcc.GetCounters();
+                    tempCounters = pcc.GetCounters();
                 }
                 catch (Exception ex)
                 {
@@ -183,25 +193,28 @@ namespace PerformanceCounterSample
                     return;
                 }
 
-                if (counters != null)
+                if (tempCounters != null)
                 {
-                    foreach (var counter in counters)
-                    {
-                        Console.WriteLine(counter.CounterName);
-                    }
+                    counters[0] = tempCounters[0];
                 }
                 else
                 {
                     Console.WriteLine("This category has no counter for single-instance.");
+                    return;
                 }
             }
             else
             {
+                counters = new PerformanceCounter[instances.Length];
+
+                int i = 0;
                 foreach (var instance in instances)
                 {
+                    PerformanceCounter[] tempCounters;
+
                     try
                     {
-                        counters = pcc.GetCounters(instance);
+                        tempCounters = pcc.GetCounters(instance);
                     }
                     catch (Exception ex)
                     {
@@ -211,19 +224,42 @@ namespace PerformanceCounterSample
                         return;
                     }
 
-                    if (counters != null)
+                    if (tempCounters != null)
                     {
-                        foreach (var counter in counters)
-                        {
-                            Console.WriteLine(counter.CounterName);
-                        }
+                        counters[i] = tempCounters[0];
                     }
                     else
                     {
                         Console.WriteLine("This category has no counter for {0}.", instance);
+                        return;
                     }
+
+                    i++;
                 }
             }
+
+            Console.WriteLine("{0,-10}\t{1,-5}\t{2,-5}\t{3,-10}", "Category", "Instance", "Counter", "Value");
+
+            for (int j = 0; j < 100; j++)
+            {
+                for (int i = 0; i < counters.Length; i++)
+                {
+                    try
+                    {
+                        string instance_name = (instances.Length == 0) ? "single-instance" : instances[i];
+                        float perfValue = counters[i].NextValue();
+                        Console.WriteLine("{0,-10}\t{1,-5}\t{2,-5}\t{3,-10}", category, instance_name, counters[i].CounterName, perfValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("ERROR: Could not read NextValue: {0}", ex.Message);
+                        return;
+                    }
+
+                    System.Threading.Thread.Sleep(Constants.GET_DATA_INTERVAL);
+                }
+            }
+                
         }
     }
 }
