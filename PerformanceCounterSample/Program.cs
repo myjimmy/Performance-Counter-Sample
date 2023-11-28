@@ -238,7 +238,7 @@ namespace PerformanceCounterSample
                 }
             }
 
-            Console.WriteLine("{0,-10}\t{1,-5}\t{2,-5}\t{3,-10}", "Category", "Instance", "Counter", "Value");
+            Console.WriteLine("{0,-10}\t{1,-5}\t{2,-5}\t{3,-10}\t{4,-10}", "Time", "Category", "Instance", "Counter", "Value");
 
             for (int j = 0; j < 100; j++)
             {
@@ -248,18 +248,19 @@ namespace PerformanceCounterSample
                     {
                         string instance_name = (instances.Length == 0) ? "single-instance" : instances[i];
                         float perfValue = counters[i].NextValue();
-                        Console.WriteLine("{0,-10}\t{1,-5}\t{2,-5}\t{3,-10}", category, instance_name, counters[i].CounterName, perfValue);
+                        Console.WriteLine("{0:yyyy/MM/dd HH:mm:ss}\t{1,-5}\t{2,-5}\t{3,-10}\t{4,-10}",
+                            DateTime.Now, category, instance_name, counters[i].CounterName, perfValue);
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine("ERROR: Could not read NextValue: {0}", ex.Message);
                         return;
                     }
-
-                    System.Threading.Thread.Sleep(Constants.GET_DATA_INTERVAL);
                 }
+
+                System.Threading.Thread.Sleep(Constants.GET_DATA_INTERVAL);
             }
-                
+
         }
     }
 }
